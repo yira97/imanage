@@ -26,13 +26,21 @@ const (
 )
 
 func init() {
+	// 指定工作区目录
 	flag.StringVar(&flagWorkspace, "workspace", "./imanage_data", "workspace directory, eg: --workspace /PATH/TO/YOUR_WORKSPACE")
+	// 转码命令
 	flag.BoolVar(&flagTranscode, "transcode", false, "perform transcode, eg: --transcode to_webp to_avif")
+	// 指定转码到webp
 	flag.BoolVar(&flagTranscodeTargetWebp, "to_webp", true, "transcode images to webP format")
+	// 指定转码到avif
 	flag.BoolVar(&flagTranscodeTargetAvif, "to_avif", false, "transcode images to AVIF format")
+	// 指定转码质量
 	flag.IntVar(&flagTranscodeQuality, "quality", defaultTranscodeQuality, "assign the quality of the output image")
+	// 指定转码包含元数据
 	flag.BoolVar(&flagTranscodeIncludeMetaData, "include_metadata", false, "whether or not include the metadata")
+	// 指定使用libwebp
 	flag.BoolVar(&flagTranscodeUseLibwebp, "use_libwebp", false, "use libwebp which is in your system")
+	// 指定使用libavif
 	flag.BoolVar(&flagTranscodeUseLibwebp, "use_libavif", false, "use libavif which is in your system")
 }
 

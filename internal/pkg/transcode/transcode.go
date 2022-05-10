@@ -8,7 +8,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -122,16 +121,6 @@ func (t *transCoderTool) Execute() error {
 		return fmt.Errorf("image decode error: %w", err)
 	}
 
-	srcContent, err := ioutil.ReadFile(srcPath)
-	if err != nil {
-		return fmt.Errorf("read file failed: %w", err)
-	}
-
-	metadata, err := webp.GetMetadata(srcContent, "EXIF")
-	if err != nil {
-		return fmt.Errorf("get metadata failed: %w", err)
-	}
-
 	base := path.Base(t.inputFile)
 	if !isSupportedInputFormat(base) {
 		return fmt.Errorf("unsupported input format")
@@ -153,13 +142,7 @@ func (t *transCoderTool) Execute() error {
 			return fmt.Errorf("can't create destination file: %w", err)
 		}
 
-		pMetadata := &metadata
-
-		if !t.opts.Metadata {
-			pMetadata = nil
-		}
-
-		if err = adapter.Write(img, dst, pMetadata, &t.opts); err != nil {
+		if err = adapter.Write(img, dst, &t.opts); err != nil {
 			return err
 		}
 	}
@@ -168,7 +151,8 @@ func (t *transCoderTool) Execute() error {
 }
 
 type transcoderAdapter interface {
-	Write(img image.Image, out io.Writer, metadata *[]byte, opts *Options) error
+	// Write without image metadata
+	Write(img image.Image, out io.Writer, opts *Options) error
 }
 
 type webpAdapter struct{}
@@ -176,9 +160,8 @@ type webpAdapter struct{}
 type avifAdapter struct{}
 
 // https://pkg.go.dev/github.com/chai2010/webp
-func (a *webpAdapter) Write(img image.Image, out io.Writer, metadata *[]byte, opts *Options) error {
+func (a *webpAdapter) Write(img image.Image, out io.Writer, opts *Options) error {
 	var buf bytes.Buffer
-	var err error
 
 	webpOpts := &webp.Options{}
 	if opts.Quality != nil {
@@ -189,15 +172,6 @@ func (a *webpAdapter) Write(img image.Image, out io.Writer, metadata *[]byte, op
 		return err
 	}
 
-	content := buf.Bytes()
-	if metadata != nil {
-		fmt.Println(len(content))
-		fmt.Println(len(*metadata))
-		content, err = webp.SetMetadata(content, *metadata, "EXIF")
-		if err != nil {
-			return err
-		}
-	}
 	if _, err := out.Write(buf.Bytes()); err != nil {
 		return err
 	}
@@ -206,7 +180,7 @@ func (a *webpAdapter) Write(img image.Image, out io.Writer, metadata *[]byte, op
 }
 
 // https://pkg.go.dev/github.com/Kagami/go-avif
-func (a *avifAdapter) Write(img image.Image, out io.Writer, metadata *[]byte, opts *Options) error {
+func (a *avifAdapter) Write(img image.Image, out io.Writer, opts *Options) error {
 
 	avifOpts := avif.Options{}
 	if opts.Quality != nil {
